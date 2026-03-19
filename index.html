@@ -518,6 +518,10 @@
     const form = document.getElementById('emailForm');
     const msg = document.getElementById('successMsg');
     if (input.value && input.validity.valid) {
+      fetch('https://script.google.com/macros/s/AKfycbxY8O3C8FcN7j-gA1pZqHv1yyv6sYRWa37eKSrLznvf9ywBox-Grlagur3LEyWr5_7Z/exec', {
+        method: 'POST',
+        body: JSON.stringify({ email: input.value })
+      });
       form.style.opacity = '0.4';
       form.style.pointerEvents = 'none';
       msg.classList.add('show');

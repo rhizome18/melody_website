@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Melody — Coming Soon</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0c0b0f;
+    --fg: #f0ece4;
+    --accent: #c8a46e;
+    --accent-light: #e4d5b7;
+    --muted: #6e6a62;
+    --glass: rgba(240, 236, 228, 0.04);
+    --glass-border: rgba(200, 164, 110, 0.12);
+  }
+
+  html { font-size: 16px; }
+
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* Ambient background */
+  body::before {
+    content: '';
+    position: fixed;
+    top: -40%; left: -20%;
+    width: 80vw; height: 80vw;
+    background: radial-gradient(circle, rgba(200, 164, 110, 0.06) 0%, transparent 65%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  body::after {
+    content: '';
+    position: fixed;
+    bottom: -30%; right: -10%;
+    width: 60vw; height: 60vw;
+    background: radial-gradient(circle, rgba(200, 164, 110, 0.04) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Grain overlay */
+  .grain {
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    background-size: 200px;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.6;
+  }
+
+  .page {
+    position: relative;
+    z-index: 2;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    min-height: 100vh;
+  }
+
+  /* Waveform visualization */
+  .waveform {
+    width: min(480px, 85vw);
+    height: 160px;
+    margin-bottom: 1.8rem;
+    opacity: 0;
+    animation: fadeIn 1.8s ease 0.5s forwards;
+  }
+
+  .wordmark {
+    font-family: 'Instrument Serif', serif;
+    font-size: clamp(3.2rem, 8vw, 7rem);
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    color: var(--fg);
+    margin-bottom: 0.8rem;
+    opacity: 0;
+    animation: fadeUp 1s ease 0.2s forwards;
+    text-align: center;
+  }
+  .tagline {
+    font-size: clamp(0.95rem, 1.6vw, 1.15rem);
+    font-weight: 300;
+    color: var(--muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 0.8rem;
+    opacity: 0;
+    animation: fadeUp 1s ease 0.8s forwards;
+    text-align: center;
+  }
+
+  .location {
+    font-size: 0.78rem;
+    font-weight: 400;
+    color: var(--accent);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-bottom: 4rem;
+    opacity: 0;
+    animation: fadeUp 1s ease 0.9s forwards;
+    text-align: center;
+  }
+
+  /* Divider line */
+  .divider {
+    width: 1px;
+    height: 64px;
+    background: linear-gradient(to bottom, transparent, var(--accent), transparent);
+    margin-bottom: 3.5rem;
+    opacity: 0;
+    animation: fadeIn 1.2s ease 1s forwards;
+  }
+
+  .notify-text {
+    font-size: 0.82rem;
+    font-weight: 400;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 1.2rem;
+    opacity: 0;
+    animation: fadeUp 1s ease 1.15s forwards;
+  }
+
+  .email-form {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    max-width: 440px;
+    width: 100%;
+    border: 1px solid var(--glass-border);
+    border-radius: 100px;
+    background: var(--glass);
+    backdrop-filter: blur(16px);
+    overflow: hidden;
+    opacity: 0;
+    animation: fadeUp 1s ease 1.3s forwards;
+    transition: border-color 0.3s ease;
+  }
+  .email-form:focus-within {
+    border-color: var(--accent);
+  }
+
+  .email-form input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--fg);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.92rem;
+    font-weight: 300;
+    padding: 1rem 1.6rem;
+    letter-spacing: 0.01em;
+  }
+  .email-form input::placeholder {
+    color: var(--muted);
+    opacity: 0.7;
+  }
+
+  .email-form button {
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 1rem 2rem;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    white-space: nowrap;
+  }
+  .email-form button:hover {
+    background: var(--accent-light);
+  }
+
+  /* Success state */
+  .success-msg {
+    display: none;
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 1.1rem;
+    color: var(--accent);
+    margin-top: 1.2rem;
+    animation: fadeUp 0.6s ease forwards;
+  }
+  .success-msg.show { display: block; }
+
+  /* Footer */
+  .footer {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    padding: 2rem;
+    font-size: 0.72rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    opacity: 0;
+    animation: fadeIn 1s ease 1.6s forwards;
+  }
+  .footer a {
+    color: var(--accent);
+    text-decoration: none;
+    transition: color 0.3s;
+  }
+  .footer a:hover { color: var(--accent-light); }
+
+  /* Floating particles */
+  .particles {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    overflow: hidden;
+  }
+  .particle {
+    position: absolute;
+    width: 2px; height: 2px;
+    background: var(--accent);
+    border-radius: 50%;
+    opacity: 0;
+    animation: drift linear infinite;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes drift {
+    0% { opacity: 0; transform: translateY(100vh) scale(0); }
+    10% { opacity: 0.4; }
+    90% { opacity: 0.1; }
+    100% { opacity: 0; transform: translateY(-10vh) scale(1); }
+  }
+
+  @media (max-width: 520px) {
+    .email-form {
+      flex-direction: column;
+      border-radius: 20px;
+    }
+    .email-form input { padding: 1rem 1.4rem; text-align: center; }
+    .email-form button { padding: 1rem; border-radius: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="grain"></div>
+
+<div class="particles" id="particles"></div>
+
+<div class="page">
+  <h1 class="wordmark">Melody</h1>
+  <canvas class="waveform" id="waveform" width="480" height="160"></canvas>
+  <p class="tagline">Sensing as Intelligence</p>
+  <p class="location">Pasadena, CA</p>
+
+  <div class="divider"></div>
+
+  <p class="notify-text">Be the first to know</p>
+  <div class="email-form" id="emailForm">
+    <input type="email" id="emailInput" placeholder="your@email.com" required />
+    <button type="button" id="submitBtn" onclick="handleSubmit()">Notify Me</button>
+  </div>
+  <p class="success-msg" id="successMsg">Thank you — we'll be in touch.</p>
+</div>
+
+<footer class="footer">
+  &copy; 2026 Melody &nbsp;&middot;&nbsp; <a href="#">Privacy</a> &nbsp;&middot;&nbsp; <a href="#">Contact</a>
+</footer>
+
+<script>
+  // Floating particles
+  const container = document.getElementById('particles');
+  for (let i = 0; i < 18; i++) {
+    const p = document.createElement('div');
+    p.classList.add('particle');
+    p.style.left = Math.random() * 100 + '%';
+    p.style.animationDuration = (12 + Math.random() * 20) + 's';
+    p.style.animationDelay = (Math.random() * 15) + 's';
+    p.style.width = p.style.height = (1 + Math.random() * 2) + 'px';
+    container.appendChild(p);
+  }
+
+  // Waveform animation — bio-musical: EKG pulses + neural oscillation + harmonics
+  const canvas = document.getElementById('waveform');
+  const ctx = canvas.getContext('2d');
+  const W = 480, H = 160;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  ctx.scale(dpr, dpr);
+
+  let time = 0;
+
+  // Music note particles
+  const notes = ['♪', '♫', '♩', '♬'];
+  const noteParticles = [];
+  let lastSpawn = 0;
+
+  function spawnNote(x, y) {
+    noteParticles.push({
+      x: x,
+      y: y,
+      startY: y,
+      char: notes[Math.floor(Math.random() * notes.length)],
+      vx: (Math.random() - 0.5) * 0.6,
+      vy: -0.4 - Math.random() * 0.5,
+      life: 1,
+      decay: 0.004 + Math.random() * 0.004,
+      size: 10 + Math.random() * 8,
+      rotation: (Math.random() - 0.5) * 0.4,
+      rotSpeed: (Math.random() - 0.5) * 0.02,
+    });
+  }
+
+  function updateAndDrawNotes() {
+    for (let i = noteParticles.length - 1; i >= 0; i--) {
+      const n = noteParticles[i];
+      n.x += n.vx;
+      n.y += n.vy;
+      n.vy -= 0.003; // gentle upward acceleration
+      n.vx *= 0.998;
+      n.rotation += n.rotSpeed;
+      n.life -= n.decay;
+      if (n.life <= 0) { noteParticles.splice(i, 1); continue; }
+
+      const alpha = n.life * 0.7;
+      ctx.save();
+      ctx.translate(n.x, n.y);
+      ctx.rotate(n.rotation);
+      ctx.font = `${n.size}px serif`;
+      ctx.fillStyle = `rgba(200, 164, 110, ${alpha})`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(n.char, 0, 0);
+      ctx.restore();
+    }
+  }
+
+  // EKG / heartbeat pulse shape — sharp QRS spike with recovery
+  function ekgPulse(t) {
+    // t is 0..1 within one heartbeat cycle
+    if (t < 0.0)  return 0;
+    // P wave (small bump)
+    if (t < 0.12) return 0.15 * Math.sin(t / 0.12 * Math.PI);
+    // flat
+    if (t < 0.18) return 0;
+    // Q dip
+    if (t < 0.22) return -0.12 * Math.sin((t - 0.18) / 0.04 * Math.PI);
+    // R spike (sharp up)
+    if (t < 0.28) return Math.sin((t - 0.22) / 0.06 * Math.PI);
+    // S dip
+    if (t < 0.34) return -0.3 * Math.sin((t - 0.28) / 0.06 * Math.PI);
+    // recovery
+    if (t < 0.42) return 0;
+    // T wave (broad recovery bump)
+    if (t < 0.58) return 0.25 * Math.sin((t - 0.42) / 0.16 * Math.PI);
+    return 0;
+  }
+
+  function drawBioWave(t) {
+    const mid = H * 0.55;
+
+    // --- Layer 1: EKG monitor trace (cursor draws left-to-right, wraps) ---
+    const cycleDuration = 6.0; // seconds for cursor to cross full width — slow and deliberate
+    const cursor = ((t / cycleDuration) % 1) * W; // current draw position
+    const gapWidth = 30; // eraser gap ahead of cursor
+
+    ctx.lineWidth = 1.8;
+    ctx.lineJoin = 'round';
+
+    // How many full heartbeats fit across the width
+    const beatsPerWidth = 3;
+
+    // Draw the trace in two segments: behind cursor (fresh), and ahead of gap (old/fading)
+    // Fresh trace: 0 to cursor
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(200, 164, 110, 0.75)';
+    let prevY = mid;
+    for (let x = 0; x <= Math.min(cursor, W); x++) {
+      const edge = Math.pow(Math.sin((x / W) * Math.PI), 0.5);
+      const phase = (x / W) * beatsPerWidth;
+      const cyclePos = phase % 1;
+      const ekg = ekgPulse(cyclePos) * 30 * edge;
+      const wander = Math.sin(x * 0.01 + t * 0.1) * 2 * edge;
+      const y = mid - ekg + wander;
+      if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      prevY = y;
+    }
+    ctx.stroke();
+
+    // Faded old trace: ahead of gap to end
+    const fadeStart = cursor + gapWidth;
+    if (fadeStart < W) {
+      ctx.beginPath();
+      ctx.strokeStyle = 'rgba(200, 164, 110, 0.15)';
+      for (let x = Math.max(0, Math.floor(fadeStart)); x <= W; x++) {
+        const edge = Math.pow(Math.sin((x / W) * Math.PI), 0.5);
+        const phase = (x / W) * beatsPerWidth;
+        const cyclePos = phase % 1;
+        const ekg = ekgPulse(cyclePos) * 30 * edge;
+        const wander = Math.sin(x * 0.01 + t * 0.1) * 2 * edge;
+        const y = mid - ekg + wander;
+        if (x === Math.floor(fadeStart)) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+
+    // Cursor glow dot
+    if (cursor > 0 && cursor < W) {
+      const edge = Math.pow(Math.sin((cursor / W) * Math.PI), 0.5);
+      const phase = (cursor / W) * beatsPerWidth;
+      const cyclePos = phase % 1;
+      const ekg = ekgPulse(cyclePos) * 30 * edge;
+      const wander = Math.sin(cursor * 0.01 + t * 0.1) * 2 * edge;
+      const cy = mid - ekg + wander;
+
+      ctx.beginPath();
+      ctx.arc(cursor, cy, 3, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(200, 164, 110, 0.9)';
+      ctx.fill();
+
+      // Soft glow
+      const glow = ctx.createRadialGradient(cursor, cy, 0, cursor, cy, 12);
+      glow.addColorStop(0, 'rgba(200, 164, 110, 0.25)');
+      glow.addColorStop(1, 'rgba(200, 164, 110, 0)');
+      ctx.beginPath();
+      ctx.arc(cursor, cy, 12, 0, Math.PI * 2);
+      ctx.fillStyle = glow;
+      ctx.fill();
+
+      // Spawn notes near the cursor at R-spike peaks
+      if (cyclePos > 0.22 && cyclePos < 0.30 && t - lastSpawn > 0.4) {
+        spawnNote(cursor, cy);
+        lastSpawn = t;
+      }
+    }
+
+    // Occasionally spawn from harmonic crests too
+    if (Math.random() < 0.006) {
+      const nx = W * 0.1 + Math.random() * W * 0.8;
+      const edge = Math.sin((nx / W) * Math.PI);
+      const hy = mid + Math.sin(nx * 0.06 + t * 2.0) * 7 * edge;
+      spawnNote(nx, hy);
+    }
+
+    // --- Layer 2: Neural alpha oscillation (8-12 Hz feel) ---
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(240, 236, 228, 0.10)';
+    ctx.lineWidth = 1.2;
+    for (let x = 0; x <= W; x++) {
+      const edge = Math.sin((x / W) * Math.PI);
+      const burst = (0.5 + 0.5 * Math.sin(x * 0.006 + t * 0.15));
+      const y = mid + Math.sin(x * 0.045 + t * 1.2) * 14 * edge * burst
+                    + Math.sin(x * 0.028 - t * 0.7) * 5 * edge;
+      if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // --- Layer 3: Harmonic overtones (musical partials) ---
+    const harmonics = [
+      { freq: 0.06,  amp: 6,  speed: 1.5,  alpha: 0.18 },
+      { freq: 0.12,  amp: 3,  speed: -2.2, alpha: 0.10 },
+      { freq: 0.18,  amp: 2,  speed: 3.2,  alpha: 0.07 },
+    ];
+    harmonics.forEach(h => {
+      ctx.beginPath();
+      ctx.strokeStyle = `rgba(200, 164, 110, ${h.alpha})`;
+      ctx.lineWidth = 0.7;
+      for (let x = 0; x <= W; x++) {
+        const edge = Math.sin((x / W) * Math.PI);
+        const breathe = 1 + 0.4 * Math.sin(t * 0.3 + h.freq * 50);
+        const y = mid + Math.sin(x * h.freq + t * h.speed) * h.amp * edge * breathe;
+        if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    });
+  }
+
+  function animate() {
+    ctx.clearRect(0, 0, W, H);
+    time += 0.016;
+    drawBioWave(time);
+    updateAndDrawNotes();
+    requestAnimationFrame(animate);
+  }
+  animate();
+
+  // Form handling
+  function handleSubmit() {
+    const input = document.getElementById('emailInput');
+    const form = document.getElementById('emailForm');
+    const msg = document.getElementById('successMsg');
+    if (input.value && input.validity.valid) {
+      form.style.opacity = '0.4';
+      form.style.pointerEvents = 'none';
+      msg.classList.add('show');
+    } else {
+      input.style.outline = '1px solid #c8a46e';
+      setTimeout(() => input.style.outline = 'none', 1500);
+    }
+  }
+
+  document.getElementById('emailInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') handleSubmit();
+  });
+</script>
+</body>
+</html>
